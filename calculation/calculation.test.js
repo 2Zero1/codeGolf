@@ -12,54 +12,52 @@
 */
 
 
-const calculate = (str) => {
-   const arr = parse(str);
-   const exp = plusOrMinus(multiOrDiv(arr)).flat(Infinity);
-    return calc(exp);
-}
-
-const parse = (expression) => {
-    const exp = expression.split("");
-
-    for(let i =0; i<expression.length; i++) {
-        if (exp[i] === "-") {
-            exp[i] = "+";
-            exp[++i] = -(+exp[i]);
-        } else {
-            if(!(exp[i] in ops)) {
-                exp[i] = +exp[i];
-            }
+const calculate = (()=>{
+    const parse = (expression) => {
+        const exp = expression.split("");
+        for(let i =0; i<expression.length; i++) {
+            if(exp[i] in ops){
+                if (exp[i] === "-") {
+                    exp[i] = "+";
+                    exp[i + 1] = "-" + exp[i + 1];
+                }
+            }else exp[i] = parseFloat(exp[i]);
         }
-    }
-    return  exp;
-}
+        return  exp;
+    };
+    const op =(result, targetOps)=>{
+        let idx = 0;
+        if(result.some((v, i)=>targetOps.includes(v) ? (idx = i, true) : false)){
+            result.splice(idx - 1, 3, [result[idx - 1] ,result[i + 1], result[idx]]);
+            return op(target, targetOps);
+        }else return result
+    };
+    
+    const multiOrDiv = arr=>op([...arr], ["*", "/"]);
+    const plusOrMinus = arr=>op([...arr], ["+", "-"]);
+    const ops = {
+        "+":(y, x)=>x + y,
+        "-":(y, x)=>x - y,
+        "*":(y, x)=>x * y,
+        "/":(y, x)=>x / y
+    };
+    const calc = arr=>{
+        const commandQue = [...arr];
+        const accStack = [];
+        let item;
+        while(item = commandQue.shift()) accStack.push(
+            item in ops ? ops[item](accStack.pop(), accStack.pop()) : item
+        );
+        if(accStack.length !== 1) throw "invaild arr :" + arr;
+        else  return accStack[0];
+    };
+    return str=>{
+        const arr = parse(str);
+        const exp = plusOrMinus(multiOrDiv(arr)).flat(Infinity);
+        return calc(exp);
+    };
+})();
 
-function op(result, targetOps){
-    for(let i = 0; i < result.length; i ++){
-        if(targetOps.includes(result[i])) {
-            result.splice(i-1,3, [result[i - 1] ,result[i + 1], result[i]]);
-            return op(result, targetOps);
-        }
-    }
-    return result
-}
-const multiOrDiv = (arr) => op([...arr], ["*", "/"]);
-const plusOrMinus = (arr) => op([...arr], ["+", "-"]);
-
-const ops = {
-    "+":(y,x) => x+y,
-    "-":(y,x) => x-y,
-    "*":(y,x) => x*y,
-    "/":(y,x) => x/y
-}
-const calc = (arr) => {
-    const tmp = [...arr];
-    const stack = [];
-    while(item = tmp.shift()) {
-        item in ops ? stack.push(ops[item](stack.pop(),stack.pop())) : stack.push(item);
-    }
-    return stack.pop();
-}
 
 test("test", () => {
     expect(calculate("1-2")).toBe(-1);
